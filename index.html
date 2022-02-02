@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="./assets/style.css">
+        <title>SBMP Launcher</title>
+    </head>
+    <body>
+        <div id="popups">
+            <div id="alertPopup">
+                <h1>null</h1>
+                <p>null</p>
+                <button>Okay</button>
+            </div>
+            <div id="askPopup">
+                <h1>null</h1>
+                <p>null</p>
+                <div>
+                    <button>Yes</button>
+                    <button>No</button>
+                </div>
+            </div>
+        </div>
+        <div id="app">
+            <div id="frameBar">
+                <span>SBMP Launcher</span>
+                <div>
+                    <icon id="minimizeCircle" name="minimize"></icon>
+                    <icon id="closeCircle" name="close"></icon>
+                </div>
+            </div>
+            <div id="appContent">
+                <div id="appSidebar">
+                    <a class="sidebarOption selected" goto="mainPanel">
+                        <icon name="securitybreach"></icon>
+                        <span>Play</span>
+                    </a>
+                    <a class="sidebarOption" goto="settingsPanel">
+                        <icon name="settings"></icon>
+                        <span>Settings</span>
+                    </a>
+                </div>
+                <div id="appTab">
+                    <div id="mainPanel">
+                        <icon id="mainIcon" name="securitybreach"></icon>
+                        <audio id="mainSecretAudio">
+                            <source src="./assets/Way To Go Superstar!.mp3" type="audio/mpeg">
+                        </audio>
+                        <h2>Security Breach Multiplayer Mod</h2>
+                        <div>
+                            <button id="mainButton">Install</button>
+                            <div>
+                                <icon id="mainMore" name="more"></icon>
+                                <div id="contextMenu">
+                                    <div id="contextUninstall">
+                                        <icon name="uninstall"></icon>
+                                        <span>Uninstall Mod</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="settingsPanel">
+                        <h1>Settings</h1>
+                        <diV>
+                            <p>FNAF Security Breach location:</p>
+                            <div>
+                                <div id="settingsPathText"></div>
+                                <button id="settingsPathChoose">Choose</button>
+                            </div>
+                        </diV>
+                        <div>
+                            <p>Launcher Appearance</p>
+                            <select id="settingsAppearance">
+                                <option value="0">Light</option>
+                                <option value="1">Dark</option>
+                            </select>
+                        </div>
+                        <div>
+                            <p>Receive Mod Beta Updates</p>
+                            <input id="settingsModBeta" type="checkbox">
+                        </div>
+                        <footer>
+                            <p>Made by SBMP Team</p>
+                            <p>Version <span id="settingsVersion">null</span></p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

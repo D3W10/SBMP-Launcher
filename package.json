@@ -1,0 +1,59 @@
+{
+    "name": "sbmp-launcher",
+    "productName": "SBMP Launcher",
+    "version": "1.0.0",
+    "description": "The launcher to install and manage the Security Breach Multiplayer mod",
+    "author": "SBMP Team",
+    "main": "main.js",
+    "scripts": {
+        "start": "set DEBUG=1 && electron .",
+        "build": "electron-builder"
+    },
+    "keywords": [],
+    "license": "Unlicensed",
+    "build": {
+        "appId": "com.sbmp.launcher",
+        "win": {
+            "icon": "./assets/installer/logo.ico",
+            "requestedExecutionLevel": "requireAdministrator"
+        },
+        "nsis": {
+            "oneClick": false,
+            "perMachine": false,
+            "allowToChangeInstallationDirectory": true,
+            "installerSidebar": "./installerSidebar.bmp",
+            "uninstallerSidebar": "./installerSidebar.bmp",
+            "uninstallDisplayName": "${productName}",
+            "artifactName": "${productName} ${version} Setup.${ext}",
+            "unicode": true,
+            "runAfterFinish": true,
+            "createDesktopShortcut": "always",
+            "createStartMenuShortcut": true,
+            "menuCategory": false
+        },
+        "asar": true,
+        "directories": {
+            "buildResources": "./assets/installer"
+        },
+        "extraResources": [
+            {
+                "from": "node_modules/regedit/vbs",
+                "to": "regedit/vbs",
+                "filter": [
+                    "**/*"
+                ]
+            }
+        ]
+    },
+    "dependencies": {
+        "@continuata/unrar": "^1.6.0",
+        "axios": "^0.25.0",
+        "electron-store": "^8.0.1",
+        "googleapis": "^39.2.0",
+        "regedit": "^5.0.0"
+    },
+    "devDependencies": {
+        "electron": "^16.0.7",
+        "electron-builder": "^22.14.5"
+    }
+}

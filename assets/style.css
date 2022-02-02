@@ -1,0 +1,532 @@
+:root {
+    --primaryBackground: #ffffff;
+    --secondaryBackground: #f0f0f0;
+    --terciaryBackground: #e1e1e1;
+    --primaryForeground: #111111;
+    --secondaryForeground: #000000;
+    --terciaryForeground: #444444;
+    --primaryOverlay: rgba(0, 0, 0, 0.05);
+    --secondaryOverlay: rgba(0, 0, 0, 0.1);
+    --terciaryOverlay: rgba(0, 0, 0, 0.15);
+    --boxShadow: rgb(100 100 111 / 30%) 0px 4px 29px 0px;
+    --red: #e9302e;
+    --orange: #f19d29;
+    --blue: #1bf6f8;
+    --darkBlue : #047a7c;
+}
+
+[theme="dark"] {
+    --primaryBackground: #000000;
+    --secondaryBackground: #0f0f0f;
+    --terciaryBackground: #1e1e1e;
+    --primaryForeground: #eeeeee;
+    --secondaryForeground: #ffffff;
+    --terciaryForeground: #bbbbbb;
+    --primaryOverlay: rgba(255, 255, 255, 0.05);
+    --secondaryOverlay: rgba(255, 255, 255, 0.1);
+    --terciaryOverlay: rgba(255, 255, 255, 0.15);
+    --boxShadow: rgb(155 155 144 / 30%) 0px 4px 29px 0px;
+}
+
+/* #region BASICS */
+
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--primaryOverlay);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--terciaryOverlay);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background-color: var(--secondaryOverlay);
+}
+
+* {
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    font-family: montserrat;
+    overflow: hidden;
+    color: var(--primaryForeground);
+    background-color: var(--primaryBackground);
+    user-select: none;
+}
+
+h1 {
+    margin: 0 0 20px 0;
+}
+
+h2 {
+    margin: 30px 0 60px 0;
+}
+
+img {
+    display: block;
+    -webkit-user-drag: none;
+}
+
+a {
+    text-decoration: none;
+}
+
+button {
+    height: fit-content;
+    position: relative;
+    padding: 10px 25px;
+    border: 0;
+    outline: 0;
+    font: inherit;
+    border-radius: 100vw;
+    color: var(--primaryBackground);
+    background-color: var(--orange);
+    cursor: pointer;
+    overflow: hidden;
+    z-index: 1;
+}
+
+button::before {
+    content: "";
+    position: absolute;
+    width: 20%;
+    height: 100%;
+    top: 0;
+    left: -20%;
+    background-color: rgba(255, 255, 255, 0.2);
+    z-index: -1;
+}
+
+button:hover::before {
+    transition: transform 0.45s ease-out;
+    transform: translateX(600%);
+}
+
+button:disabled {
+    background-color: var(--terciaryOverlay) !important;
+    cursor: default;
+}
+
+button:disabled:hover::before {
+    transition: unset;
+    transform: unset;
+}
+
+input[type="checkbox"] {
+    width: 29px;
+    height: 29px;
+    margin: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    visibility: hidden;
+}
+
+input[type="checkbox"]:before {
+    content: "";
+    width: inherit;
+    height: inherit;
+    position: absolute;
+    border-radius: 5px;
+    background-color: var(--terciaryBackground);
+    visibility: visible;
+}
+
+input[type="checkbox"]::after {
+    content: "";
+    width: 0;
+    height: 0;
+    position: absolute;
+    border-radius: 5px;
+    background-color: var(--blue);
+    transition: width 0.2s, height 0.2s;
+    visibility: visible;
+}
+
+input[type="checkbox"]:checked::after {
+    width: inherit;
+    height: inherit;
+}
+
+select {
+    width: 150px;
+    height: 39px;
+    padding: 10px;
+    border: 0;
+    outline: 0;
+    font: inherit;
+    border-radius: 5px;
+    color: var(--terciaryForeground);
+    background-color: var(--terciaryBackground);
+}
+
+icon {
+    display: flex;
+    fill: var(--primaryForeground);
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+}
+
+#splash {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    -webkit-app-region: drag;
+}
+
+/* #endregion */
+
+/* #region APP FRAME */
+
+#frameBar {
+    height: 40px;
+    width: 100vw;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--primaryBackground);
+    -webkit-app-region: drag;
+}
+
+#frameBar > div {
+    display: flex;
+}
+
+#frameBar > div > icon {
+    width: 25px;
+    cursor: pointer;
+    -webkit-app-region: no-drag;
+}
+
+#minimizeCircle {
+    fill: var(--orange);
+}
+
+#closeCircle {
+    margin-left: 3px;
+    fill: var(--red);
+}
+
+/* #endregion */
+
+/* #region APP CONTENT */
+
+#appContent {
+    display: flex;
+    flex-direction: row;
+    height: calc(100% - 40px);
+}
+
+#appSidebar {
+    height: 100%;
+    min-width: 125px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--primaryBackground);
+}
+
+.sidebarOption {
+    width: 100%;
+    height: 90px;
+    position: relative;
+    display: flex;
+    margin-bottom: 10px;
+    background-color: var(--secondaryBackground);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.sidebarOption:last-child {
+    margin-bottom: 0;
+}
+
+.sidebarOption::before {
+    content: "";
+    width: 0px;
+    height: 0px;
+    position: absolute;
+    border-radius: 100vw;
+    background-color: var(--terciaryBackground);
+    transition: width 0.4s, height 0.4s;
+}
+
+.sidebarOption > icon {
+    width: 40%;
+    fill: var(--primaryForeground);
+    transform: translateY(0px);
+    transition: transform 0.4s;
+}
+
+.sidebarOption > span {
+    position: absolute;
+    opacity: 0;
+    transform: translateY(0px);
+    transition: transform 0.4s, opacity 0.2s;
+}
+
+.sidebarOption:hover > icon, .sidebarOption.selected > icon {
+    transform: translateY(-14px);
+}
+
+.sidebarOption:hover > span, .sidebarOption.selected > span {
+    transform: translateY(22px);
+    opacity: 1;
+    transition: transform 0.4s, opacity 0.2s 0.2s;
+}
+
+.sidebarOption.selected::before {
+    width: 135px;
+    height: 135px;
+}
+
+#appTab {
+    width: 100%;
+    height: 100%;
+    background-color: var(--secondaryBackground);
+    border-radius: 10px 0 0 0;
+}
+
+#appTab > div {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+/* #endregion */
+
+/* #region APP PANELS */
+
+#mainPanel {
+    justify-content: center;
+    align-items: center;
+}
+
+#mainPanel > icon {
+    width: 100px;
+    fill: var(--red);
+}
+
+#mainPanel > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#mainButton {
+    width: 250px;
+    margin: 0 20px 0 59px;
+    transition: background-color 0.4s;
+}
+
+#mainButton::after {
+    content: "";
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: var(--blue);
+    z-index: -1;
+}
+
+#mainButton.installed {
+    background-color: var(--red);
+}
+
+#mainPanel > div > div {
+    width: 39px;
+    height: 39px;
+}
+
+#mainPanel > div > div > icon {
+    height: 39px;
+    cursor: pointer;
+}
+
+#contextMenu {
+    width: 200px;
+    height: 45px;
+    padding: 0;
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    max-width: 0;
+    max-height: 0;
+    border-radius: 10px;
+    background-color: var(--secondaryBackground);
+    box-shadow: var(--boxShadow);
+    transition: max-width 0.4s, max-height 0.4s, padding 0.4s;
+}
+
+#contextMenu > div {
+    padding: 5px;
+    display: none;
+    align-items: center;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+
+#contextMenu > div:hover {
+    border-radius: 5px;
+    background-color: var(--terciaryBackground);
+}
+
+#contextMenu > div > icon {
+    height: 25px;
+    margin-right: 8px;
+}
+
+#settingsPanel p {
+    margin: 0;
+}
+
+#settingsPanel > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+#settingsPanel > div > div {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+#settingsPanel > footer {
+    height: 100%;
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    color: var(--terciaryForeground);
+}
+
+#settingsPanel > footer > p {
+    margin-top: 10px;
+}
+
+#settingsPathText {
+    width: 250px;
+    height: 39px;
+    padding: 10px;
+    display: inline-flex;
+    margin-right: 15px;
+    color: var(--terciaryForeground);
+    background-color: var(--terciaryBackground);
+    border-radius: 5px;
+    overflow-x: overlay;
+    white-space: nowrap;
+}
+
+/* #endregion */
+
+/* #region POPUPS */
+
+#popups {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+}
+
+#popups > div {
+    width: 40%;
+    display: none;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: var(--primaryBackground);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.2s, transform 0.4s;
+}
+
+#popups > div > h1 {
+    margin: 0 0 10px 0;
+}
+
+#popups > div > p {
+    margin: 10px 0 20px 0;
+    font-size: 15px;
+}
+
+#popups > div > button {
+    float: right;
+}
+
+#popups > div > div {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+#popups > div > div > button:first-child {
+    margin-right: 10px;
+    background-color: var(--red);
+}
+
+/* #endregion */
+
+/* #region SPLASH */
+
+#splash > icon {
+    width: 80px;
+    fill: var(--red);
+}
+
+#splash > p {
+    margin-bottom: 30px;
+    font-size: 20px;
+}
+
+#splash > img {
+    width: 175px;
+}
+
+/* #endregion */
+
+@font-face {
+    font-family: montserrat;
+    src: url("./fonts/montserrat.ttf");
+}
