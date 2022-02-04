@@ -22,7 +22,7 @@ window.addEventListener("load", () => {
     }());
 
     ipcRenderer.on("CheckForLauncherUpdatesComplete", async (_, updateInfo) => {
-        if (process.env.DEBUG != 1 && updateInfo != null && updateInfo.tag_name != preload.GetPackageData().version) {
+        if (updateInfo != null && updateInfo.tag_name != preload.GetPackageData().version && (await preload.GetSetting("autoUpdate"))) {
             document.getElementById("splashMessage").innerText = "Downloading Updates";
             document.getElementById("splashBattery").setAttribute("src", "./assets/images/battery-3.png");
             ipcRenderer.send("DownloadLauncherUpdate", updateInfo.assets[0].id);

@@ -496,12 +496,57 @@ icon {
 }
 
 #popups > div > div {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
+    padding: 10px;
+    margin: 10px 0 20px 0;
+    max-height: 300px;
+    border-radius: 10px;
+    background-color: var(--secondaryBackground);
+    overflow: overlay;
 }
 
-#popups > div > div > button:first-child {
+#popups > div > div > h3 {
+    margin: 0;
+    font-size: 1.4em;
+}
+
+#popups > div > div > ul {
+    padding-left: 10px;
+    margin: 10px 0 25px 0;
+    list-style: none;
+}
+
+#popups > div > div > ul:last-child {
+    margin-bottom: 0;
+}
+
+#popups > div > div > ul > li {
+    margin: 5px 0;
+    font-size: 15px;
+}
+
+#popups > div > div > ul > li:first-child {
+    margin-top: 0;
+}
+
+#popups > div > div > ul > li:last-child {
+    margin-bottom: 0;
+}
+
+#popups > div > div > ul > li:before {
+    content: "•";
+    font-size: 1.3em;
+    font-weight: 900;
+    margin-right: 10px;
+}
+
+#popups > div > div.buttons {
+    margin: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+#popups > div > div.buttons > button:first-child {
     margin-right: 10px;
     background-color: var(--red);
 }

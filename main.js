@@ -6,7 +6,7 @@ const axios = require("axios").default;
 const { google } = require("googleapis");
 const unrar = require("@continuata/unrar");
 const regedit = require("regedit");
-const { spawnSync } = require("child_process");
+const { spawn } = require("child_process");
 var splash, win;
 
 regedit.setExternalVBSLocation("resources/regedit/vbs");
@@ -17,7 +17,8 @@ const appConfig = new Store({ defaults: {
     settings: {
         darkMode: false,
         modBeta: false
-    }
+    },
+    autoUpdate: true
 }});
 
 function createWindow() {
@@ -35,7 +36,6 @@ function createWindow() {
         sandbox: true,
         webPreferences: {
             devTools: true,
-            nativeWindowOpen: false,
             preload: path.join(__dirname, "preload/splash.js")
         }
     });
@@ -58,7 +58,6 @@ function createWindow() {
         sandbox: true,
         webPreferences: {
             devTools: true,
-            nativeWindowOpen: false,
             preload: path.join(__dirname, "preload/home.js")
         }
     });
@@ -154,6 +153,16 @@ ipcMain.on("InstallLauncherUpdate", async (_, filePath) => {
     app.exit();
 });
 
+ipcMain.on("GetVersionChanges", async (event) => {
+    let ghLog = await axios.get("https://api.github.com/repos/D3W10/SBMP-Launcher/releases/tags/" + app.getVersion(), {
+        headers: {
+            accept: "application/vnd.github.v3+json",
+            authorization: "token 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"
+        }
+    });
+    event.returnValue = ghLog.data.body;
+});
+
 ipcMain.on("DownloadSBMP", () => {
     const downloadMod = new Promise((resolve, reject) => {
         let tempFilePath = app.getPath("temp") + "\\SBMP.rar";
@@ -205,17 +214,13 @@ ipcMain.on("InstallSBMP", async () => {
 });
 
 ipcMain.on("RunSBMP", () => {
-    try {
-        regedit.list("HKLM\\SOFTWARE\\Wow6432Node\\Valve\\Steam", (_, result) => spawnSync(result[Object.keys(result)[0]].values.InstallPath.value + "\\steam.exe", ["-gameidlaunch 747660", "-dx11"]));
-    }
-    catch {
-        try {
-            regedit.list("HKLM\\SOFTWARE\\Valve\\Steam", (_, result) => spawnSync(result[Object.keys(result)[0]].values.InstallPath.value + "\\steam.exe", ["-gameidlaunch 747660", "-dx11"]));
-        }
-        catch {
-            win.webContents.send("ShowPopUp", "alertPopup", "Error", "SBMP Launcher couldn't find the path to your Steam installation, make sure you have Steam installed and try again.");
-        }
-    }
+    regedit.list("HKLM\\SOFTWARE\\Wow6432Node\\Valve\\Steam")
+    .on("data", (entry) => spawn("\"" + entry.data.values.InstallPath.value.replace(/\\/g, "/") + "/steam.exe\"", ["-gameidlaunch 747660", "-dx11"], { detached: true, shell: true, stdio: "ignore" }).unref())
+    .on("error", () => {
+        regedit.list("HKLM\\SOFTWARE\\Valve\\Steam")
+        .on("data", (entry) => spawn("\"" + entry.data.values.InstallPath.value.replace(/\\/g, "/") + "/steam.exe\"", ["-gameidlaunch 747660", "-dx11"], { detached: true, shell: true, stdio: "ignore" }).unref())
+        .on("error", () => win.webContents.send("ShowPopUp", "alertPopup", "Error", "SBMP Launcher couldn't find the path to your Steam installation, make sure you have Steam installed and try again."));
+    });
 });
 
 ipcMain.on("UninstallSBMP", async (event) => {

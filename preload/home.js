@@ -49,6 +49,13 @@ window.addEventListener("load", () => {
         document.getElementById("settingsPathText").innerText = (await preload.GetSetting("sbDir") != null ? (await preload.GetSetting("sbDir")) : "");
         document.getElementById("settingsModBeta").checked = await preload.GetSetting("settings.modBeta");
         document.getElementById("settingsVersion").innerText = preload.GetPackageData().version;
+
+        setTimeout(async () => {
+            if (preload.GetPackageData().version != (await preload.GetSetting("lastRunVersion"))) {
+                preload.ShowPopUp("changelogPopup", "New in " + preload.GetPackageData().version, (await preload.GetVersionChanges()));
+                preload.SetSetting("lastRunVersion", preload.GetPackageData().version);
+            }
+        }, 1000);
     }());
     
     preload.ReloadModStatus();

@@ -1,5 +1,6 @@
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
+const showdown = require("showdown");
 var styleControl;
 
 //#region FUNCTIONS
@@ -61,6 +62,10 @@ async function SetSetting(name, value) {
     return ipcRenderer.send("SetSetting", name, value);
 }
 
+async function GetVersionChanges() {
+    return await ipcRenderer.sendSync("GetVersionChanges");
+}
+
 async function InstallSBMP() {
     document.getElementById("mainButton").style.setProperty("background-color", "var(--darkBlue)", "important");
     document.getElementById("mainButton").disabled = true;
@@ -91,20 +96,27 @@ async function ShowOpenDialog(filters, properties) {
 }
 
 async function ShowPopUp(type, title, text, yesFunc) {
+    let converter = new showdown.Converter();
+
     document.querySelector("#" + type + " > h1").innerText = title;
-    document.querySelector("#" + type + " > p").innerText = text;
+    if (type != "changelogPopup")
+        document.querySelector("#" + type + " > p").innerText = text;
+    else
+        document.querySelector("#" + type + " > div").innerHTML = converter.makeHtml(text);
 
     async function ClosePopUp(event) {
         if (event.currentTarget == event.target) {
             document.getElementById("popups").removeEventListener("click", ClosePopUp);
-            if (type != "askPopup")
+            if (type == "alertPopup")
                 document.querySelector("#" + type + " > button").removeEventListener("click", ClosePopUp);
-            else {
+            else if (type == "askPopup") {
                 let oldYesButton = document.querySelector("#" + type + " > div > button:first-child");
                 let newYesButton = oldYesButton.cloneNode(true);
                 oldYesButton.parentNode.replaceChild(newYesButton, oldYesButton);
                 document.querySelector("#" + type + " > div > button:last-child").removeEventListener("click", ClosePopUp);
             }
+            else if (type == "changelogPopup")
+                document.querySelector("#" + type + " > button").removeEventListener("click", ClosePopUp);
             document.getElementById("popups").style.opacity = "0";
             document.getElementById(type).style.opacity = "0";
             document.getElementById(type).style.transform = "scale(0.5)";
@@ -122,12 +134,15 @@ async function ShowPopUp(type, title, text, yesFunc) {
     document.getElementById(type).style.opacity = "1";
     document.getElementById(type).style.transform = "scale(1)";
     document.getElementById("popups").addEventListener("click", ClosePopUp);
-    if (type != "askPopup")
+    if (type == "alertPopup")
         document.querySelector("#" + type + " > button").addEventListener("click", ClosePopUp);
-    else {
+    else if (type == "askPopup") {
         document.querySelector("#" + type + " > div > button:first-child").addEventListener("click", ClosePopUp);
         document.querySelector("#" + type + " > div > button:first-child").addEventListener("click", yesFunc);
         document.querySelector("#" + type + " > div > button:last-child").addEventListener("click", ClosePopUp);
+    }
+    else if (type == "changelogPopup") {
+        document.querySelector("#" + type + " > button").addEventListener("click", ClosePopUp);
     }
 }
 
@@ -184,6 +199,7 @@ exports.GetProcessVersions = GetProcessVersions;
 exports.GetPaths = GetPaths;
 exports.GetSetting = GetSetting;
 exports.SetSetting = SetSetting;
+exports.GetVersionChanges = GetVersionChanges;
 exports.InstallSBMP = InstallSBMP;
 exports.RunSBMP = RunSBMP;
 exports.UninstallSBMP = UninstallSBMP;
