@@ -1,13 +1,14 @@
-const { app, BrowserWindow, dialog, globalShortcut, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, dialog, globalShortcut, ipcMain, screen, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const Store = require("electron-store");
 const axios = require("axios").default;
-const { google } = require("googleapis");
+const progress = require("progress-stream");
 const unrar = require("@continuata/unrar");
 const regedit = require("regedit");
 const { spawn } = require("child_process");
-var splash, win;
+const serverURI = "https://sbmp-server.herokuapp.com";
+var splash, win, golden;
 
 regedit.setExternalVBSLocation("resources/regedit/vbs");
 
@@ -18,7 +19,8 @@ const appConfig = new Store({ defaults: {
         darkMode: false,
         modBeta: false
     },
-    autoUpdate: true
+    autoUpdate: true,
+    installedVersion: 0
 }});
 
 function createWindow() {
@@ -39,9 +41,7 @@ function createWindow() {
             preload: path.join(__dirname, "preload/splash.js")
         }
     });
-
     splash.loadFile("splash.html");
-
     splash.once("ready-to-show", () => splash.show());
 
     win = new BrowserWindow({
@@ -61,7 +61,6 @@ function createWindow() {
             preload: path.join(__dirname, "preload/home.js")
         }
     });
-
     win.loadFile("index.html");
 }
 
@@ -106,9 +105,46 @@ ipcMain.on("WinClose", () => app.exit());
 
 ipcMain.on("WinMinimize", (_, window) => BrowserWindow.getAllWindows()[GetWindowId(window)].minimize());
 
+ipcMain.on("CheckForModUpdates", async () => {
+    let svModInfo = await axios.get(!appConfig.get("settings.modBeta") ? serverURI + "/get/release" : serverURI + "/get/beta", {
+        params: {
+            info: "true"
+        }
+    });
+
+    if (appConfig.get("installedVersion") != Number(svModInfo.data.version))
+        win.webContents.send("CheckForModUpdatesComplete", true);
+    else
+        win.webContents.send("CheckForModUpdatesComplete", false);
+});
+
 ipcMain.on("OpenMain", () => {
     splash.close();
     win.show();
+});
+
+ipcMain.on("GoldenSecret", () => {
+    golden = new BrowserWindow({
+        title: "SBMP Launcher",
+        width: screen.getPrimaryDisplay().workAreaSize.width,
+        height: screen.getPrimaryDisplay().workAreaSize.height,
+        frame: false,
+        resizable: false,
+        fullscreen: true,
+        fullscreenable: true,
+        maximizable: false,
+        show: false,
+        icon: path.join(__dirname, "assets/logo.png"),
+        sandbox: true,
+        webPreferences: {
+            devTools: true
+        }
+    });
+    golden.loadFile("assets/golden.html");
+    golden.once("ready-to-show", () => {
+        golden.show();
+        setTimeout(() => golden.close(), 3000);
+    });
 });
 
 ipcMain.on("GetPackageData", (event) => event.returnValue = fs.readFileSync(path.join(__dirname, "package.json"), "utf8"));
@@ -121,74 +157,70 @@ ipcMain.on("SetSetting", (_, name, value) => appConfig.set(name, value));
 
 ipcMain.on("CheckForLauncherUpdates", async () => {
     try {
-        let ghInfo = await axios.get("https://api.github.com/repos/D3W10/SBMP-Launcher/releases/latest", {
-            headers: {
-                accept: "application/vnd.github.v3+json",
-                authorization: "token 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"
+        let svInfo = await axios.get(serverURI + "/cfu", {
+            params: {
+                version: app.getVersion()
             }
         });
-        splash.webContents.send("CheckForLauncherUpdatesComplete", ghInfo.data);
+        splash.webContents.send("CheckForLauncherUpdatesComplete", svInfo.data);
     }
     catch {
-        splash.webContents.send("CheckForLauncherUpdatesComplete", null);
+        splash.webContents.send("CheckForLauncherUpdatesComplete", false);
     }
 });
 
-ipcMain.on("DownloadLauncherUpdate", async (_, assetId) => {
+ipcMain.on("DownloadLauncherUpdate", async () => {
     let writer = fs.createWriteStream(app.getPath("temp") + "\\SBMP-Update.exe");
-    let ghFile = await axios.get("https://api.github.com/repos/D3W10/SBMP-Launcher/releases/assets/" + assetId, {
-        headers: {
-            accept: "application/octet-stream",
-            authorization: "token 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"
-        },
+    let svFile = await axios.get(serverURI + "/download", {
         responseType: "stream"
     });
 
-    ghFile.data.pipe(writer);
+    svFile.data.pipe(writer);
     writer.on("close", () => splash.webContents.send("DownloadLauncherUpdateComplete", writer.path));
 });
 
 ipcMain.on("InstallLauncherUpdate", async (_, filePath) => {
-    shell.openPath(filePath);
+    await shell.openPath(filePath);
     app.exit();
 });
 
 ipcMain.on("GetVersionChanges", async (event) => {
-    let ghLog = await axios.get("https://api.github.com/repos/D3W10/SBMP-Launcher/releases/tags/" + app.getVersion(), {
-        headers: {
-            accept: "application/vnd.github.v3+json",
-            authorization: "token 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"
+    let svChanges = await axios.get(serverURI + "/changes", {
+        params: {
+            version: app.getVersion()
         }
     });
-    event.returnValue = ghLog.data.body;
+    event.returnValue = svChanges.data;
 });
 
-ipcMain.on("DownloadSBMP", () => {
-    const downloadMod = new Promise((resolve, reject) => {
-        let tempFilePath = app.getPath("temp") + "\\SBMP.rar";
-        let oAuth2 = new google.auth.OAuth2("936700799316-oam1ehmdrc923e518crrkqglvfhipe0s.apps.googleusercontent.com", "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", [ "urn:ietf:wg:oauth:2.0:oob", "http://localhost" ]);
-        oAuth2.setCredentials({"access_token":"ya29.A0ARrdaM_OsaFrZx_W0luGL7Kaf9JaV8e7EsvAng119eDpwhs6k6l7w30a3nGJkXXi7XDtKhJbTZdjx8DQFWeCDViILC53SulR23rOQrwM-7qQcOkmjkB_WcgpAd1WYG9b1NbFiv973tNvAPs8tkBSNVgRokY3","refresh_token":"1//03G99XZxqxishCgYIARAAGAMSNwF-L9IrwXZYPbJ0L1-sOlVTinmmGBiLcWbgVYeh4JqFdB_T7yxGgqLw8qSHzAl1rkSlK6zfbu0","scope":"https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.readonly","token_type":"Bearer","expiry_date":1643304049745});
+ipcMain.on("DownloadSBMP", async () => {
+    try {
+        let fileStream = fs.createWriteStream(app.getPath("temp") + "\\SBMP.rar");
 
-        const drive = google.drive({ version: "v3", auth: oAuth2 });
-        const fileID = appConfig.get("settings.modBeta") ? "130Q7peI913XwBIBTD6fba4Js-yt4JeHJ" : "1xJlXcieg0Fyxbzm3w7uIhoS4O7a_j2K1";
-        drive.files.get({ fileId: fileID, alt: "media" }, { responseType: "stream" }, (_, res) => {
-            res.data
-                .on("end", () => resolve())
-                .on("error", () => reject())
-                .pipe(fs.createWriteStream(tempFilePath));
+        let svModInfo = await axios.get(!appConfig.get("settings.modBeta") ? serverURI + "/get/release" : serverURI + "/get/beta", {
+            params: {
+                info: "true"
+            }
         });
-    });
+        let str = progress({ length: Number(svModInfo.data.size), time: 100 });
 
-    downloadMod
-        .then(() => {
-            win.webContents.send("InstallProgress", 45);
-            win.setProgressBar(45 / 100);
-            win.webContents.send("DownloadToInstall", true);
-        })
-        .catch(() => win.webContents.send("DownloadToInstall", false));
+        let svMod = await axios.get(!appConfig.get("settings.modBeta") ? serverURI + "/get/release" : serverURI + "/get/beta", {
+            responseType: "stream"
+        });
+        svMod.data.pipe(str).pipe(fileStream);
+
+        str.on("progress", (pgss) => {
+            win.webContents.send("InstallProgress", (pgss.percentage * 45) / 100, pgss.eta, pgss.speed);
+            win.setProgressBar((pgss.percentage * 45) / 10000);
+        });
+        fileStream.on("close", () => win.webContents.send("DownloadToInstall", true, Number(svModInfo.data.version)));
+    }
+    catch {
+        win.webContents.send("DownloadToInstall", false);
+    }
 });
 
-ipcMain.on("InstallSBMP", async () => {
+ipcMain.on("InstallSBMP", async (_, version) => {
     try {
         if (fs.existsSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks\\fnaf9.pak"))
             fs.unlinkSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks\\fnaf9.pak");
@@ -206,6 +238,7 @@ ipcMain.on("InstallSBMP", async () => {
         fs.copyFileSync(path.join(__dirname, "assets\\Engine.ini"), path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini"));
         win.webContents.send("InstallProgress", 100);
         win.setProgressBar(-1);
+        appConfig.set("installedVersion", version);
         win.webContents.send("InstallToFinish", true);
     }
     catch {
@@ -221,6 +254,21 @@ ipcMain.on("RunSBMP", () => {
         .on("data", (entry) => spawn("\"" + entry.data.values.InstallPath.value.replace(/\\/g, "/") + "/steam.exe\"", ["-gameidlaunch 747660", "-dx11"], { detached: true, shell: true, stdio: "ignore" }).unref())
         .on("error", () => win.webContents.send("ShowPopUp", "alertPopup", "Error", "SBMP Launcher couldn't find the path to your Steam installation, make sure you have Steam installed and try again."));
     });
+});
+
+ipcMain.on("GetModChanges", async () => {
+    let fileStream = fs.createWriteStream(app.getPath("temp") + "\\changelog.md");
+
+    let svChanges = await axios.get(serverURI + "/changesmod", {
+        params: {
+            beta: appConfig.get("settings.modBeta") ? "true" : "false"
+        },
+        responseType: "stream"
+    });
+
+    svChanges.data.on("end", () => win.webContents.send("GetModChangesComplete", true))
+    svChanges.data.on("error", () => win.webContents.send("GetModChangesComplete", false))
+    svChanges.data.pipe(fileStream);
 });
 
 ipcMain.on("UninstallSBMP", async (event) => {

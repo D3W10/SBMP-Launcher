@@ -1,7 +1,7 @@
 const path = require("path");
 const preload = require("./preload");
 const { Sleep } = require("./preload");
-var openPanel = null;
+var openPanel = null, golden = null, upSideDown = 0, upSideDownTimeOut = undefined, iCannotSee = 0, iCannotSeeTimeOut = undefined;
 
 window.addEventListener("load", () => {
     //#region INITIALIZATION
@@ -60,6 +60,21 @@ window.addEventListener("load", () => {
     
     preload.ReloadModStatus();
 
+    document.addEventListener("keypress", (event) => {
+        if (event.code == "Digit1" && golden == null)
+            golden = "1";
+        else if (event.code == "Digit9" && golden == "1")
+            golden = "19";
+        else if (event.code == "Digit8" && golden == "19")
+            golden = "198";
+        else if (event.code == "Digit7" && golden == "198") {
+            golden = null;
+            preload.GoldenSecret();
+        }
+        else
+            golden = null;
+    });
+
     //#endregion
 
     //#region FRAME BAR
@@ -72,12 +87,10 @@ window.addEventListener("load", () => {
 
     //#region MAIN PANEL
 
-    document.getElementById("mainIcon").addEventListener("dblclick", async () => {
-        document.getElementById("mainSecretAudio").play();
-    });
+    document.getElementById("mainIcon").addEventListener("dblclick", async () => document.getElementById("mainSecretAudio").play());
 
     document.getElementById("mainButton").addEventListener("click", async () => {
-        if (document.getElementById("mainButton").innerText == "Install") {
+        if (document.getElementById("mainButton").innerText == "Install" || document.getElementById("mainButton").innerText == "Update") {
             if ((await preload.GetSetting("sbDir")) != null)
                 preload.InstallSBMP();
             else
@@ -115,9 +128,9 @@ window.addEventListener("load", () => {
         document.body.removeEventListener("click", CloseContextMenu);
     }
 
-    document.getElementById("contextUninstall").addEventListener("click", () => {
-        preload.ShowPopUp("askPopup", "Uninstall", "Are you sure you want to uninstall the mod? Your game files will return to their original state.", preload.UninstallSBMP);
-    });
+    document.getElementById("contextChangelog").addEventListener("click", async () => preload.GetModChanges());
+
+    document.getElementById("contextUninstall").addEventListener("click", () => preload.ShowPopUp("askPopup", "Uninstall", "Are you sure you want to uninstall the mod? Your game files will return to their original state.", preload.UninstallSBMP));
 
     //#endregion
 
@@ -142,10 +155,32 @@ window.addEventListener("load", () => {
         else
             document.body.setAttribute("theme", "light");
         preload.SetSetting("settings.darkMode", Boolean(Number(document.getElementById("settingsAppearance").value)));
+
+        iCannotSee++;
+        clearTimeout(iCannotSeeTimeOut);
+        iCannotSeeTimeOut = setTimeout(() => iCannotSee = 0, 1000);
+        if (iCannotSee == 5) {
+            iCannotSee = 0;
+            document.getElementById("settingsSecretAudio").play();
+        }
     });
 
     document.getElementById("settingsModBeta").addEventListener("change", () => {
         preload.SetSetting("settings.modBeta", document.getElementById("settingsModBeta").checked);
+        preload.ReloadModStatus();
+    });
+
+    document.getElementById("settingsVersion").addEventListener("click", () => {
+        upSideDown++;
+        clearTimeout(upSideDownTimeOut);
+        upSideDownTimeOut = setTimeout(() => upSideDown = 0, 400);
+        if (upSideDown == 5) {
+            upSideDown = 0;
+            if (!document.body.hasAttribute("style"))
+                document.body.style.transform = "rotateZ(180deg)";
+            else
+                document.body.removeAttribute("style");
+        }
     });
     
     //#endregion

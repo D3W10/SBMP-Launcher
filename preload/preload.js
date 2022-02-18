@@ -26,11 +26,8 @@ async function ReloadModStatus() {
     if (document.getElementById("mainButtonProgressControl"))
         document.getElementById("mainButtonProgressControl").remove();
 
-    if (fs.existsSync((await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak")) {
-        document.getElementById("mainButton").classList.add("installed");
-        document.getElementById("mainButton").innerText = "Play";
-        document.getElementById("mainMore").removeAttribute("style");
-    }
+    if (fs.existsSync((await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak"))
+        ipcRenderer.send("CheckForModUpdates");
     else {
         document.getElementById("mainButton").classList.remove("installed");
         document.getElementById("mainButton").innerText = "Install";
@@ -40,6 +37,10 @@ async function ReloadModStatus() {
 
 function OpenMain() {
     ipcRenderer.send("OpenMain");
+}
+
+function GoldenSecret() {
+    ipcRenderer.send("GoldenSecret");
 }
 
 function GetPackageData() {
@@ -58,7 +59,7 @@ async function GetSetting(name) {
     return await ipcRenderer.sendSync("GetSetting", name);
 }
 
-async function SetSetting(name, value) {
+function SetSetting(name, value) {
     return ipcRenderer.send("SetSetting", name, value);
 }
 
@@ -70,6 +71,7 @@ async function InstallSBMP() {
     document.getElementById("mainButton").style.setProperty("background-color", "var(--darkBlue)", "important");
     document.getElementById("mainButton").disabled = true;
     document.getElementById("mainButton").innerText = "Downloading...";
+    document.getElementById("mainMore").style.visibility = "hidden";
     styleControl = document.createElement("style");
     styleControl.id = "mainButtonProgressControl";
     document.getElementById("mainPanel").appendChild(styleControl);
@@ -78,8 +80,12 @@ async function InstallSBMP() {
     ipcRenderer.send("DownloadSBMP");
 }
 
-async function RunSBMP() {
+function RunSBMP() {
     ipcRenderer.send("RunSBMP");
+}
+
+function GetModChanges() {
+    return ipcRenderer.send("GetModChanges");
 }
 
 async function UninstallSBMP() {
@@ -96,13 +102,11 @@ async function ShowOpenDialog(filters, properties) {
 }
 
 async function ShowPopUp(type, title, text, yesFunc) {
-    let converter = new showdown.Converter();
-
     document.querySelector("#" + type + " > h1").innerText = title;
     if (type != "changelogPopup")
         document.querySelector("#" + type + " > p").innerText = text;
     else
-        document.querySelector("#" + type + " > div").innerHTML = converter.makeHtml(text);
+        document.querySelector("#" + type + " > div").innerHTML = new showdown.Converter().makeHtml(text);
 
     async function ClosePopUp(event) {
         if (event.currentTarget == event.target) {
@@ -154,24 +158,33 @@ function Sleep(milliseconds) {
 
 //#region RENDER LISTENERS
 
-ipcRenderer.on("DownloadToInstall", (_, status) => {
+ipcRenderer.on("CheckForModUpdatesComplete", (_, status) => {
+    if (status) {
+        document.getElementById("mainButton").classList.remove("installed");
+        document.getElementById("mainButton").innerText = "Update";
+    }
+    else {
+        document.getElementById("mainButton").classList.add("installed");
+        document.getElementById("mainButton").innerText = "Play";
+    }
+    document.getElementById("mainMore").removeAttribute("style");
+});
+
+ipcRenderer.on("DownloadToInstall", (_, status, version) => {
     if (!status) {
         CancelInstall("downloading");
+        ReloadModStatus();
         return;
     }
     document.getElementById("mainButton").innerText = "Installing...";
-    ipcRenderer.send("InstallSBMP");
+    ipcRenderer.send("InstallSBMP", version);
 });
 
-ipcRenderer.on("InstallProgress", (_, progress) => {
-    styleControl.innerText = "#mainButton::after { width: " + progress + "%; transition: width 0.2s; }";
-});
+ipcRenderer.on("InstallProgress", (_, progress) => styleControl.innerText = "#mainButton::after { width: " + progress + "%; transition: width 0.2s; }");
 
 ipcRenderer.on("InstallToFinish", async (_, status) => {
-    if (!status) {
+    if (!status)
         CancelInstall("installing");
-        return;
-    }
     await Sleep(700);
     ReloadModStatus();
 });
@@ -183,9 +196,14 @@ async function CancelInstall(action) {
     return;
 }
 
-ipcRenderer.on("ShowPopUp", async (_, type, title, text, yesFunc) => {
-    ShowPopUp(type, title, text, yesFunc);
+ipcRenderer.on("GetModChangesComplete", async (_, status) => {
+    if (!status)
+        ShowPopUp("alertPopup", "Error", "There was an error while getting the mod changelog.");
+    else
+        ShowPopUp("changelogPopup", "Changelog", new showdown.Converter().makeHtml(fs.readFileSync((await GetPaths("temp")) + "\\changelog.md", "utf8")));
 });
+
+ipcRenderer.on("ShowPopUp", async (_, type, title, text, yesFunc) => ShowPopUp(type, title, text, yesFunc));
 
 //#endregion
 
@@ -194,6 +212,7 @@ exports.MinimizeWindow = MinimizeWindow;
 exports.ReloadIcons = ReloadIcons;
 exports.ReloadModStatus = ReloadModStatus;
 exports.OpenMain = OpenMain;
+exports.GoldenSecret = GoldenSecret;
 exports.GetPackageData = GetPackageData;
 exports.GetProcessVersions = GetProcessVersions;
 exports.GetPaths = GetPaths;
@@ -202,6 +221,7 @@ exports.SetSetting = SetSetting;
 exports.GetVersionChanges = GetVersionChanges;
 exports.InstallSBMP = InstallSBMP;
 exports.RunSBMP = RunSBMP;
+exports.GetModChanges = GetModChanges;
 exports.UninstallSBMP = UninstallSBMP;
 exports.ShowOpenDialog = ShowOpenDialog;
 exports.ShowPopUp = ShowPopUp;

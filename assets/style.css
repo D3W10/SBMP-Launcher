@@ -377,7 +377,7 @@ icon {
 
 #contextMenu {
     width: 200px;
-    height: 45px;
+    height: 85px;
     padding: 0;
     margin-top: 5px;
     display: flex;
@@ -392,6 +392,7 @@ icon {
 
 #contextMenu > div {
     padding: 5px;
+    margin-bottom: 5px;
     display: none;
     align-items: center;
     opacity: 0;
@@ -402,6 +403,15 @@ icon {
 #contextMenu > div:hover {
     border-radius: 5px;
     background-color: var(--terciaryBackground);
+}
+
+#contextMenu > div:last-child {
+    margin-bottom: 0;
+    color: var(--red);
+}
+
+#contextMenu > div:last-child > icon {
+    fill: var(--red);
 }
 
 #contextMenu > div > icon {
@@ -509,30 +519,30 @@ icon {
     font-size: 1.4em;
 }
 
-#popups > div > div > ul {
+#popups > div > div ul {
     padding-left: 10px;
     margin: 10px 0 25px 0;
     list-style: none;
 }
 
-#popups > div > div > ul:last-child {
+#popups > div > div ul:last-child {
     margin-bottom: 0;
 }
 
-#popups > div > div > ul > li {
+#popups > div > div ul > li {
     margin: 5px 0;
     font-size: 15px;
 }
 
-#popups > div > div > ul > li:first-child {
+#popups > div > div ul > li:first-child {
     margin-top: 0;
 }
 
-#popups > div > div > ul > li:last-child {
+#popups > div > div ul > li:last-child {
     margin-bottom: 0;
 }
 
-#popups > div > div > ul > li:before {
+#popups > div > div ul > li:before {
     content: "•";
     font-size: 1.3em;
     font-weight: 900;
@@ -540,10 +550,15 @@ icon {
 }
 
 #popups > div > div.buttons {
+    padding: 0;
     margin: 0;
+    max-height: none;
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    border-radius: 0;
+    background-color: unset;
+    overflow: unset;
 }
 
 #popups > div > div.buttons > button:first-child {
@@ -556,13 +571,24 @@ icon {
 /* #region SPLASH */
 
 #splash > icon {
-    width: 80px;
+    width: 100%;
+    height: 80px;
     fill: var(--red);
+    opacity: 1;
+    transition: opacity 0.4s;
 }
 
 #splash > p {
-    margin-bottom: 30px;
+    margin: 15px 0;
+    max-width: 300px;
+    min-height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     font-size: 20px;
+    text-align: center;
+    opacity: 1;
+    transition: opacity 0.4s;
 }
 
 #splash > img {
