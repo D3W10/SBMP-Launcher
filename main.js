@@ -162,7 +162,7 @@ ipcMain.on("CheckForLauncherUpdates", async () => {
                 version: app.getVersion()
             }
         });
-        splash.webContents.send("CheckForLauncherUpdatesComplete", svInfo.data);
+        splash.webContents.send("CheckForLauncherUpdatesComplete", svInfo.data.update);
     }
     catch {
         splash.webContents.send("CheckForLauncherUpdatesComplete", false);
