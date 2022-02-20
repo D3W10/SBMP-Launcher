@@ -1,7 +1,7 @@
 {
     "name": "sbmp-launcher",
     "productName": "SBMP Launcher",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "The launcher to install and manage the Security Breach Multiplayer mod",
     "author": "SBMP Team",
     "main": "main.js",

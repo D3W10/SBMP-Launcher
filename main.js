@@ -210,7 +210,7 @@ ipcMain.on("DownloadSBMP", async () => {
         svMod.data.pipe(str).pipe(fileStream);
 
         str.on("progress", (pgss) => {
-            win.webContents.send("InstallProgress", (pgss.percentage * 45) / 100, pgss.eta, pgss.speed);
+            win.webContents.send("DownloadProgress", (pgss.percentage * 45) / 100, pgss.eta, pgss.speed);
             win.setProgressBar((pgss.percentage * 45) / 10000);
         });
         fileStream.on("close", () => win.webContents.send("DownloadToInstall", true, Number(svModInfo.data.version)));
@@ -233,8 +233,6 @@ ipcMain.on("InstallSBMP", async (_, version) => {
         
         await unrar.uncompress({ src: app.getPath("temp") + "\\SBMP.rar", dest: appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks" });
 
-        if (fs.existsSync(path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini")))
-            fs.renameSync(path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini"), path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini.old"));
         fs.copyFileSync(path.join(__dirname, "assets\\Engine.ini"), path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini"));
         win.webContents.send("InstallProgress", 100);
         win.setProgressBar(-1);
@@ -274,8 +272,6 @@ ipcMain.on("GetModChanges", async () => {
 ipcMain.on("UninstallSBMP", async (event) => {
     fs.unlinkSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks\\fnaf9.pak");
     fs.unlinkSync(path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini"));
-    if (fs.existsSync(path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini.old")))
-        fs.renameSync(path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini.old"), path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini"));
 
     event.returnValue = "";
 });

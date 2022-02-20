@@ -71,6 +71,7 @@ async function InstallSBMP() {
     document.getElementById("mainButton").style.setProperty("background-color", "var(--darkBlue)", "important");
     document.getElementById("mainButton").disabled = true;
     document.getElementById("mainButton").innerText = "Downloading...";
+    document.querySelector("#mainPanel > div > div:last-child").style.opacity = "1";
     document.getElementById("mainMore").style.visibility = "hidden";
     styleControl = document.createElement("style");
     styleControl.id = "mainButtonProgressControl";
@@ -170,12 +171,19 @@ ipcRenderer.on("CheckForModUpdatesComplete", (_, status) => {
     document.getElementById("mainMore").removeAttribute("style");
 });
 
+ipcRenderer.on("DownloadProgress", (_, progress, eta, speed) => {
+    styleControl.innerText = "#mainButton::after { width: " + progress + "%; transition: width 0.2s; }";
+    document.getElementById("installEta").innerText = eta;
+    document.getElementById("installSpeed").innerText = Math.round((speed / 1024 / 1024) * 100) / 100;
+});
+
 ipcRenderer.on("DownloadToInstall", (_, status, version) => {
     if (!status) {
         CancelInstall("downloading");
         ReloadModStatus();
         return;
     }
+    document.querySelector("#mainPanel > div > div:last-child").removeAttribute("style");
     document.getElementById("mainButton").innerText = "Installing...";
     ipcRenderer.send("InstallSBMP", version);
 });
