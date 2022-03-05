@@ -46,7 +46,7 @@ window.addEventListener("load", () => {
             });  
         }
 
-        document.getElementById("settingsPathText").innerText = (await preload.GetSetting("sbDir") != null ? (await preload.GetSetting("sbDir")) : "");
+        document.getElementById("settingsPathText").innerText = (await preload.GetSetting("sbDir") != null ? (await preload.GetSetting("sbDir")) : "Path not set");
         document.getElementById("settingsModBeta").checked = await preload.GetSetting("settings.modBeta");
         document.getElementById("settingsVersion").innerText = preload.GetPackageData().version;
 
@@ -95,7 +95,7 @@ window.addEventListener("load", () => {
                 preload.InstallSBMP();
             else
                 preload.ShowPopUp("alertPopup", "Information", "The path to Security Breach is not set up. Please go to Settings, set it up and try again!");
-        } else if (document.getElementById("mainButton").innerText == "Play") {
+        } else if (document.getElementById("mainButton").innerText == "Play" || document.getElementById("mainButton").innerText == "Play Base Game") {
             document.getElementById("mainButton").disabled = true;
             preload.RunSBMP();
             await Sleep(3000);
@@ -106,7 +106,7 @@ window.addEventListener("load", () => {
     document.getElementById("mainMore").addEventListener("click", async () => {
         if (document.getElementById("contextMenu").style.length == 0) {
             document.getElementById("contextMenu").style.maxWidth = "200px";
-            document.getElementById("contextMenu").style.maxHeight = "100px";
+            document.getElementById("contextMenu").style.maxHeight = "150px";
             document.getElementById("contextMenu").style.padding = "5px";
             await Sleep(400);
             for (let child of document.getElementById("contextMenu").children)
@@ -128,16 +128,46 @@ window.addEventListener("load", () => {
         document.body.removeEventListener("click", CloseContextMenu);
     }
 
+    document.getElementById("contextDisable").addEventListener("click", async () => preload.DisableEnableMod());
+
     document.getElementById("contextChangelog").addEventListener("click", async () => preload.GetModChanges());
 
     document.getElementById("contextUninstall").addEventListener("click", () => preload.ShowPopUp("askPopup", "Uninstall", "Are you sure you want to uninstall the mod? Your game files will return to their original state.", preload.UninstallSBMP));
 
     //#endregion
 
+    //#region BACKUP PANEL
+
+    document.getElementById("backupBackup").addEventListener("click", async () => {
+        if ((await preload.GetSetting("sbDir")) != null) {
+            let backupLocation = await preload.ShowSaveDialog("Save the Backup", `Backup-${(new Date()).toLocaleDateString().replace(/\//g, ".")}-${(new Date()).toLocaleTimeString().replace(/:/g, ".")}`, [{ name: "Backup File (.fnaf)", extensions: ["fnaf"] }]);
+            if (!backupLocation.canceled) {
+                await preload.BackupSaves(backupLocation.filePath);
+                preload.ShowPopUp("alertPopup", "Information", "The saves were successfully backed up!");
+            }
+        }
+        else
+            preload.ShowPopUp("alertPopup", "Information", "The path to Security Breach is not set up. Please go to Settings, set it up and try again!");
+    });
+
+    document.getElementById("backupRestore").addEventListener("click", async () => {
+        if ((await preload.GetSetting("sbDir")) != null) {
+            let restoreLocation = await preload.ShowOpenDialog("Select your Backup", [{ name: "Backup Files (.fnaf)", extensions: ["fnaf"] }], ["openFile"]);
+            if (!restoreLocation.canceled) {
+                await preload.RestoreSaves(restoreLocation.filePaths[0]);
+                preload.ShowPopUp("alertPopup", "Information", "The saves were successfully restored into your game files!");
+            }
+        }
+        else
+            preload.ShowPopUp("alertPopup", "Information", "The path to Security Breach is not set up. Please go to Settings, set it up and try again!");
+    });
+
+    //#endregion
+
     //#region SETTINGS PANEL
 
     document.getElementById("settingsPathChoose").addEventListener("click", async () => {
-        let fnafLocation = await preload.ShowOpenDialog([{ name: "fnaf9.exe", extensions: ["exe"] }], ["openFile"]);
+        let fnafLocation = await preload.ShowOpenDialog("Select Security Breach installation path", [{ name: "fnaf9.exe", extensions: ["exe"] }], ["openFile"]);
         if (!fnafLocation.canceled) {
             if (fnafLocation.filePaths[0].endsWith("fnaf9.exe")) {
                 preload.SetSetting("sbDir", path.dirname(fnafLocation.filePaths[0]));

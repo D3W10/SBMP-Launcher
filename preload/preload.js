@@ -1,6 +1,7 @@
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const showdown = require("showdown");
+const AdmZip = require("adm-zip");
 var styleControl;
 
 //#region FUNCTIONS
@@ -26,13 +27,17 @@ async function ReloadModStatus() {
     if (document.getElementById("mainButtonProgressControl"))
         document.getElementById("mainButtonProgressControl").remove();
 
-    if (fs.existsSync((await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak"))
-        ipcRenderer.send("CheckForModUpdates");
-    else {
-        document.getElementById("mainButton").classList.remove("installed");
-        document.getElementById("mainButton").innerText = "Install";
-        document.getElementById("mainMore").style.visibility = "hidden";
+    if (fs.existsSync(await GetSetting("sbDir"))) {
+        if (fs.existsSync((await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak") || fs.existsSync((await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak.disabled"))
+            ipcRenderer.send("CheckForModUpdates");
+        else {
+            document.getElementById("mainButton").classList.remove("installed");
+            document.getElementById("mainButton").innerText = "Install";
+            document.getElementById("mainMore").style.visibility = "hidden";
+        }
     }
+    else
+        SetSetting("sbDir", null);
 }
 
 function OpenMain() {
@@ -82,7 +87,19 @@ async function InstallSBMP() {
 }
 
 function RunSBMP() {
-    ipcRenderer.send("RunSBMP");
+    ipcRenderer.send("RunSBMP", document.getElementById("mainButton").innerText == "Play" ? false : true);
+}
+
+async function DisableEnableMod() {
+    if (!fs.existsSync((await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak.disabled")) {
+        fs.renameSync((await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak", (await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak.disabled");
+        fs.renameSync((await GetPaths("appData")) + "\\..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini", (await GetPaths("appData")) + "\\..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini.disabled");
+    }
+    else {
+        fs.renameSync((await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak.disabled", (await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak");
+        fs.renameSync((await GetPaths("appData")) + "\\..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini.disabled", (await GetPaths("appData")) + "\\..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini");
+    }
+    ReloadModStatus();
 }
 
 function GetModChanges() {
@@ -94,11 +111,30 @@ async function UninstallSBMP() {
     ReloadModStatus();
 }
 
-async function ShowOpenDialog(filters, properties) {
+async function BackupSaves(path) {
+    let backup = new AdmZip();
+    backup.addLocalFolder((await GetPaths("appData")) + "\\..\\Local\\fnaf9\\Saved\\SaveGames");
+    backup.writeZip(path);
+}
+
+async function RestoreSaves(path) {
+    let restore = new AdmZip(path);
+    restore.extractAllTo((await GetPaths("appData")) + "\\..\\Local\\fnaf9\\Saved\\SaveGames");
+}
+
+async function ShowOpenDialog(title, filters, properties) {
     return await ipcRenderer.sendSync("ShowOpenDialog", document.title, {
-        title: "Select Security Breach installation path",
+        title: title,
         filters: filters,
         properties: properties
+    });
+}
+
+async function ShowSaveDialog(title, defaultPath, filters) {
+    return await ipcRenderer.sendSync("ShowSaveDialog", document.title, {
+        title: title,
+        defaultPath: defaultPath,
+        filters: filters
     });
 }
 
@@ -159,14 +195,28 @@ function Sleep(milliseconds) {
 
 //#region RENDER LISTENERS
 
-ipcRenderer.on("CheckForModUpdatesComplete", (_, status) => {
+ipcRenderer.on("CheckForModUpdatesComplete", async (_, status) => {
     if (status) {
         document.getElementById("mainButton").classList.remove("installed");
         document.getElementById("mainButton").innerText = "Update";
     }
     else {
         document.getElementById("mainButton").classList.add("installed");
-        document.getElementById("mainButton").innerText = "Play";
+        if (!fs.existsSync((await GetSetting("sbDir")) + "\\fnaf9\\Content\\Paks\\fnaf9.pak.disabled"))
+            document.getElementById("mainButton").innerText = "Play";
+        else 
+            document.getElementById("mainButton").innerText = "Play Base Game";
+
+        ReloadIcons();
+    }
+    
+    if (document.getElementById("mainButton").innerText == "Play Base Game") {
+        document.querySelector("#contextDisable > span").innerText = "Enable Mod";
+        document.querySelector("#contextDisable > icon").setAttribute("name", "play");
+    }
+    else {
+        document.querySelector("#contextDisable > span").innerText = "Disable Mod";
+        document.querySelector("#contextDisable > icon").setAttribute("name", "pause");
     }
     document.getElementById("mainMore").removeAttribute("style");
 });
@@ -229,8 +279,12 @@ exports.SetSetting = SetSetting;
 exports.GetVersionChanges = GetVersionChanges;
 exports.InstallSBMP = InstallSBMP;
 exports.RunSBMP = RunSBMP;
+exports.DisableEnableMod = DisableEnableMod;
 exports.GetModChanges = GetModChanges;
 exports.UninstallSBMP = UninstallSBMP;
+exports.BackupSaves = BackupSaves;
+exports.RestoreSaves = RestoreSaves;
 exports.ShowOpenDialog = ShowOpenDialog;
+exports.ShowSaveDialog = ShowSaveDialog;
 exports.ShowPopUp = ShowPopUp;
 exports.Sleep = Sleep;

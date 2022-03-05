@@ -41,6 +41,10 @@
                         <icon name="securitybreach"></icon>
                         <span>Play</span>
                     </a>
+                    <a class="sidebarOption" goto="backupPanel">
+                        <icon name="backup"></icon>
+                        <span>Backup</span>
+                    </a>
                     <a class="sidebarOption" goto="settingsPanel">
                         <icon name="settings"></icon>
                         <span>Settings</span>
@@ -59,6 +63,10 @@
                                 <div>
                                     <icon id="mainMore" name="more"></icon>
                                     <div id="contextMenu">
+                                        <div id="contextDisable">
+                                            <icon name="pause"></icon>
+                                            <span>Disable Mod</span>
+                                        </div>
                                         <div id="contextChangelog">
                                             <icon name="changelog"></icon>
                                             <span>Changelog</span>
@@ -76,15 +84,29 @@
                             </div>
                         </div>
                     </div>
+                    <div id="backupPanel">
+                        <h1>Backup & Restore</h1>
+                        <p>Backup and Restore your Security Breach save files.</p>
+                        <div>
+                            <div id="backupBackup">
+                                <icon name="backup"></icon>
+                                <h3>Backup</h3>
+                            </div>
+                            <div id="backupRestore">
+                                <icon name="restore"></icon>
+                                <h3>Restore</h3>
+                            </div>
+                        </div>
+                    </div>
                     <div id="settingsPanel">
                         <h1>Settings</h1>
-                        <diV>
-                            <p>FNAF Security Breach location:</p>
+                        <div>
+                            <p>FNAF Security Breach location</p>
                             <div>
                                 <div id="settingsPathText"></div>
                                 <button id="settingsPathChoose">Choose</button>
                             </div>
-                        </diV>
+                        </div>
                         <div>
                             <p>Launcher Appearance</p>
                             <select id="settingsAppearance">
