@@ -1,7 +1,11 @@
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const dns = require("dns");
+const log = require("electron-log");
 const preload = require("./preload");
+
+console.log = log.log;
+log.transports.file.fileName = "logs.log";
 
 window.addEventListener("load", async () => {
     document.getElementById("splashMessage").innerText = "Initializing";

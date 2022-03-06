@@ -1,16 +1,22 @@
 const { app, BrowserWindow, dialog, globalShortcut, ipcMain, screen, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const Store = require("electron-store");
 const axios = require("axios").default;
 const progress = require("progress-stream");
 const unrar = require("@continuata/unrar");
 const regedit = require("regedit");
 const { spawn } = require("child_process");
+const log = require("electron-log");
 const serverURI = "https://sbmp-server.herokuapp.com";
 var splash, win, golden;
 
 regedit.setExternalVBSLocation("resources/regedit/vbs");
+console.log = log.log;
+log.transports.file.fileName = "logs.log";
+log.transports.file.getFile().clear();
+console.log("Starting SBMP Launcher " + app.getVersion() + " on Windows " + os.release());
 
 const appConfig = new Store({ defaults: {
     sbDir: null,
@@ -164,7 +170,8 @@ ipcMain.on("CheckForLauncherUpdates", async () => {
         });
         splash.webContents.send("CheckForLauncherUpdatesComplete", svInfo.data.update);
     }
-    catch {
+    catch (error) {
+        console.error("There was an error while checking for launcher updates: " + error);
         splash.webContents.send("CheckForLauncherUpdatesComplete", false);
     }
 });
@@ -195,6 +202,7 @@ ipcMain.on("GetVersionChanges", async (event) => {
 
 ipcMain.on("DownloadSBMP", async () => {
     try {
+        console.log("Starting Mod Download");
         let fileStream = fs.createWriteStream(app.getPath("temp") + "\\SBMP.rar");
         let svModInfo = await axios.get(!appConfig.get("settings.modBeta") ? serverURI + "/get/release" : serverURI + "/get/beta", {
             params: {
@@ -211,8 +219,10 @@ ipcMain.on("DownloadSBMP", async () => {
             win.webContents.send("DownloadProgress", (pgss.percentage * 20) / 100, pgss.eta, pgss.speed);
             win.setProgressBar((pgss.percentage * 20) / 10000);
         });
+        console.log("Finished Mod Download");
 
         fileStream.on("close", async () => {
+            console.log("Starting Movie Download");
             let movieStream = fs.createWriteStream(app.getPath("temp") + "\\Menu.mp4");
             let svMovieInfo = await axios.get(serverURI + "/get/movie", {
                 params: {
@@ -229,17 +239,19 @@ ipcMain.on("DownloadSBMP", async () => {
                 win.webContents.send("DownloadProgress", 20 + (pgss.percentage * 20) / 100, pgss.eta, pgss.speed);
                 win.setProgressBar((20 + (pgss.percentage * 20) / 100) / 100);
             });
+            console.log("Finished Movie Download");
     
             movieStream.on("close", () => win.webContents.send("DownloadToInstall", true, Number(svModInfo.data.version)));
         });
     }
-    catch {
-        win.webContents.send("DownloadToInstall", false);
+    catch (error) {
+        win.webContents.send("DownloadToInstall", false, error);
     }
 });
 
 ipcMain.on("InstallSBMP", async (_, version) => {
     try {
+        console.log("Starting Mod Installing");
         if (fs.existsSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks\\fnaf9.pak"))
             fs.unlinkSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks\\fnaf9.pak");
 
@@ -250,7 +262,9 @@ ipcMain.on("InstallSBMP", async (_, version) => {
         });
         
         await unrar.uncompress({ src: app.getPath("temp") + "\\SBMP.rar", dest: appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks" });
+        console.log("Finished Mod Installing");
 
+        console.log("Finishing the Mod Installation");
         fs.copyFileSync(app.getPath("temp") + "\\Menu.mp4", appConfig.get("sbDir") + "\\fnaf9\\Content\\Movies\\Menu.mp4");
         fs.unlinkSync(app.getPath("temp") + "\\Menu.mp4");
         win.webContents.send("InstallProgress", 95);
@@ -260,12 +274,13 @@ ipcMain.on("InstallSBMP", async (_, version) => {
         fs.unlinkSync(app.getPath("temp") + "\\SBMP.rar");
         win.webContents.send("InstallProgress", 100);
         win.setProgressBar(-1);
+        console.log("Mod Installed");
 
         appConfig.set("installedVersion", version);
         win.webContents.send("InstallToFinish", true);
     }
-    catch {
-        win.webContents.send("InstallToFinish", false);
+    catch (error) {
+        win.webContents.send("InstallToFinish", false, error);
     }
 });
 
@@ -277,7 +292,10 @@ ipcMain.on("RunSBMP", (_, base) => {
     .on("error", () => {
         regedit.list("HKLM\\SOFTWARE\\Valve\\Steam")
         .on("data", (entry) => spawn("\"" + entry.data.values.InstallPath.value.replace(/\\/g, "/") + "/steam.exe\"", args, { detached: true, shell: true, stdio: "ignore" }).unref())
-        .on("error", () => win.webContents.send("ShowPopUp", "alertPopup", "Error", "SBMP Launcher couldn't find the path to your Steam installation, make sure you have Steam installed and try again."));
+        .on("error", (error) => {
+            console.error("There was a problem accesing the Registry: " + error);
+            win.webContents.send("ShowPopUp", "alertPopup", "Error", "SBMP Launcher couldn't find the path to your Steam installation, make sure you have Steam installed and try again.");
+        });
     });
 });
 
@@ -291,17 +309,18 @@ ipcMain.on("GetModChanges", async () => {
         responseType: "stream"
     });
 
-    svChanges.data.on("end", () => win.webContents.send("GetModChangesComplete", true))
-    svChanges.data.on("error", () => win.webContents.send("GetModChangesComplete", false))
+    svChanges.data.on("end", () => win.webContents.send("GetModChangesComplete", true));
+    svChanges.data.on("error", (error) => win.webContents.send("GetModChangesComplete", false, error));
     svChanges.data.pipe(fileStream);
 });
 
-ipcMain.on("UninstallSBMP", async (event) => {
-    fs.unlinkSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks\\fnaf9.pak");
-    fs.unlinkSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Movies\\Menu.mp4");
-    fs.unlinkSync(path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini"));
-
-    event.returnValue = "";
+ipcMain.on("UninstallSBMP", async () => {
+    if (fs.existsSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks\\fnaf9.pak"))
+        fs.unlinkSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Paks\\fnaf9.pak");
+    if (fs.existsSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Movies\\Menu.mp4"))
+        fs.unlinkSync(appConfig.get("sbDir") + "\\fnaf9\\Content\\Movies\\Menu.mp4");
+    if (fs.existsSync(path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini")))
+        fs.unlinkSync(path.join(app.getPath("appData"), "..\\Local\\fnaf9\\Saved\\Config\\WindowsNoEditor\\Engine.ini"));
 });
 
 ipcMain.on("ShowOpenDialog", async (event, window, options) => {

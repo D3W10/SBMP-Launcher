@@ -1,8 +1,12 @@
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
+const log = require("electron-log");
 const showdown = require("showdown");
 const AdmZip = require("adm-zip");
 var styleControl;
+
+console.log = log.log;
+log.transports.file.fileName = "logs.log";
 
 //#region FUNCTIONS
 
@@ -227,8 +231,9 @@ ipcRenderer.on("DownloadProgress", (_, progress, eta, speed) => {
     document.getElementById("installSpeed").innerText = Math.round((speed / 1024 / 1024) * 100) / 100;
 });
 
-ipcRenderer.on("DownloadToInstall", (_, status, version) => {
+ipcRenderer.on("DownloadToInstall", (_, status, version, error) => {
     if (!status) {
+        console.error(error);
         CancelInstall("downloading");
         ReloadModStatus();
         return;
@@ -240,9 +245,11 @@ ipcRenderer.on("DownloadToInstall", (_, status, version) => {
 
 ipcRenderer.on("InstallProgress", (_, progress) => styleControl.innerText = "#mainButton::after { width: " + progress + "%; transition: width 0.2s; }");
 
-ipcRenderer.on("InstallToFinish", async (_, status) => {
-    if (!status)
+ipcRenderer.on("InstallToFinish", async (_, status, error) => {
+    if (!status) {
+        console.error(error);
         CancelInstall("installing");
+    }
     await Sleep(700);
     ReloadModStatus();
 });
@@ -250,13 +257,16 @@ ipcRenderer.on("InstallToFinish", async (_, status) => {
 async function CancelInstall(action) {
     if (fs.existsSync((await GetPaths("temp")) + "\\SBMP.rar"))
         fs.unlinkSync((await GetPaths("temp")) + "\\SBMP.rar");
+    document.querySelector("#mainPanel > div > div:last-child").removeAttribute("style");
     ShowPopUp("alertPopup", "Error", "There was an error while " + action + " the mod. Check if you have a stable internet connection and try again. If this problem persists, contact the SBMP Team!");
     return;
 }
 
-ipcRenderer.on("GetModChangesComplete", async (_, status) => {
-    if (!status)
+ipcRenderer.on("GetModChangesComplete", async (_, status, error) => {
+    if (!status) {
+        console.error("There was an error while getting the mod changelog: " + error);
         ShowPopUp("alertPopup", "Error", "There was an error while getting the mod changelog.");
+    }
     else
         ShowPopUp("changelogPopup", "Changelog", new showdown.Converter().makeHtml(fs.readFileSync((await GetPaths("temp")) + "\\changelog.md", "utf8")));
 });

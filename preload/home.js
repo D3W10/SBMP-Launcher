@@ -1,7 +1,11 @@
 const path = require("path");
+const log = require("electron-log");
 const preload = require("./preload");
 const { Sleep } = require("./preload");
 var openPanel = null, golden = null, upSideDown = 0, upSideDownTimeOut = undefined, iCannotSee = 0, iCannotSeeTimeOut = undefined;
+
+console.log = log.log;
+log.transports.file.fileName = "logs.log";
 
 window.addEventListener("load", () => {
     //#region INITIALIZATION
