@@ -144,21 +144,35 @@ async function ShowSaveDialog(title, defaultPath, filters) {
 
 async function ShowPopUp(type, title, text, yesFunc) {
     document.querySelector("#" + type + " > h1").innerText = title;
-    if (type != "changelogPopup")
+    if (type != "changelogPopup" && type != "bannerPopup")
         document.querySelector("#" + type + " > p").innerText = text;
-    else
+    else if (type != "bannerPopup")
         document.querySelector("#" + type + " > div").innerHTML = new showdown.Converter().makeHtml(text);
+    else {
+        let lText = "<h3>Announcement</h3>";
+        lText += "<p>A new launcher has been released as a successor of this one.</p>";
+        lText += "<p>This new launcher includes new features, fixes some of the bugs in this launcher, a new log system and support to more mods that could be released in the future.<p>";
+        lText += "<h3>What do I need to do to get the new SBMP updates?</h3>";
+        lText += "<p>Just click on the update button below and install the new launcher, then just follow the instructions to update the mod.</p>";
+        lText += "<p>After that you can just uninstall this launcher.</p>";
+        lText += "<h3>What if I don't want to upgrade, will this launcher still be supported?</h3>";
+        lText += "<p>No, this launcher will become unsupported and will eventually \"die\".</p>";
+        lText += "<p>The expected day for this to happen is 8th May 2022 but it can happen earlier, after that day you will no longer be able to get the mod or update the launcher, <i>the launcher will also behave in a strange way...<i><p>"
+        document.querySelector("#" + type + " > div").innerHTML += lText;
+    }
 
     async function ClosePopUp(event) {
         if (event.currentTarget == event.target) {
             document.getElementById("popups").removeEventListener("click", ClosePopUp);
             if (type == "alertPopup")
                 document.querySelector("#" + type + " > button").removeEventListener("click", ClosePopUp);
-            else if (type == "askPopup") {
+            else if (type == "askPopup" || type == "bannerPopup") {
                 let oldYesButton = document.querySelector("#" + type + " > div > button:first-child");
                 let newYesButton = oldYesButton.cloneNode(true);
                 oldYesButton.parentNode.replaceChild(newYesButton, oldYesButton);
                 document.querySelector("#" + type + " > div > button:last-child").removeEventListener("click", ClosePopUp);
+                if (type == "bannerPopup")
+                    document.querySelector("#" + type + "> div").innerHTML = "<img id=\"bannerBanner\">";
             }
             else if (type == "changelogPopup")
                 document.querySelector("#" + type + " > button").removeEventListener("click", ClosePopUp);
@@ -181,14 +195,16 @@ async function ShowPopUp(type, title, text, yesFunc) {
     document.getElementById("popups").addEventListener("click", ClosePopUp);
     if (type == "alertPopup")
         document.querySelector("#" + type + " > button").addEventListener("click", ClosePopUp);
-    else if (type == "askPopup") {
+    else if (type == "askPopup" || type == "bannerPopup") {
         document.querySelector("#" + type + " > div > button:first-child").addEventListener("click", ClosePopUp);
         document.querySelector("#" + type + " > div > button:first-child").addEventListener("click", yesFunc);
         document.querySelector("#" + type + " > div > button:last-child").addEventListener("click", ClosePopUp);
+
+        if (type == "bannerPopup")
+            document.querySelector("#" + type + "> div > img#bannerBanner").setAttribute("src", text);
     }
-    else if (type == "changelogPopup") {
+    else if (type == "changelogPopup")
         document.querySelector("#" + type + " > button").addEventListener("click", ClosePopUp);
-    }
 }
 
 function Sleep(milliseconds) {
@@ -258,7 +274,7 @@ async function CancelInstall(action) {
     if (fs.existsSync((await GetPaths("temp")) + "\\SBMP.rar"))
         fs.unlinkSync((await GetPaths("temp")) + "\\SBMP.rar");
     document.querySelector("#mainPanel > div > div:last-child").removeAttribute("style");
-    ShowPopUp("alertPopup", "Error", "There was an error while " + action + " the mod. Check if you have a stable internet connection and try again. If this problem persists, contact the SBMP Team!");
+    ShowPopUp("alertPopup", "Error", "There was an error while " + action + " the mod. Check if you have a stable internet connection and your antivirus is not blocking the launcher, then try again. If this problem persists, contact the SBMP Team!");
     return;
 }
 

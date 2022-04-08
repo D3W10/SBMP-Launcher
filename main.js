@@ -245,6 +245,7 @@ ipcMain.on("DownloadSBMP", async () => {
         });
     }
     catch (error) {
+        console.log("Error while downloading the mod: " + error);
         win.webContents.send("DownloadToInstall", false, error);
     }
 });
@@ -280,6 +281,7 @@ ipcMain.on("InstallSBMP", async (_, version) => {
         win.webContents.send("InstallToFinish", true);
     }
     catch (error) {
+        console.log("Error while installing the mod: " + error);
         win.webContents.send("InstallToFinish", false, error);
     }
 });

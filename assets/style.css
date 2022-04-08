@@ -347,7 +347,7 @@ icon {
 
 #mainButton {
     width: 250px;
-    margin: 0 20px 0 59px;
+    margin: 0 20px 0 20px;
     transition: background-color 0.4s;
 }
 
@@ -365,10 +365,14 @@ icon {
     background-color: var(--red);
 }
 
-#mainPanel > div > div:first-child > div {
+#mainPanel > div > div:first-child > div, #mainPanel > div > div:first-child > img {
     width: 39px;
     height: 39px;
     position: relative;
+}
+
+#mainPanel > div > div:first-child > img {
+    cursor: pointer;
 }
 
 #mainPanel > div > div:first-child > div > icon {
@@ -571,20 +575,20 @@ icon {
 #popups > div > div {
     padding: 10px;
     margin: 10px 0 20px 0;
-    max-height: 300px;
+    max-height: 350px;
     border-radius: 10px;
     background-color: var(--secondaryBackground);
     overflow: overlay;
 }
 
 #popups > div > div > h3 {
-    margin: 0;
+    margin: 25px 0 10px 0;
     font-size: 1.4em;
 }
 
 #popups > div > div ul {
     padding-left: 10px;
-    margin: 10px 0 25px 0;
+    margin: 20px 0 25px 0;
     list-style: none;
 }
 
@@ -627,6 +631,15 @@ icon {
 #popups > div > div.buttons > button:first-child {
     margin-right: 10px;
     background-color: var(--red);
+}
+
+#bannerBanner {
+    width: 100%;
+    border-radius: 5px;
+}
+
+#bannerPopup > div.buttons > button:first-child {
+    background-color: #1bf6f8 !important;
 }
 
 /* #endregion */

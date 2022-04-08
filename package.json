@@ -1,7 +1,7 @@
 {
     "name": "sbmp-launcher",
     "productName": "SBMP Launcher",
-    "version": "1.2.1",
+    "version": "1.3.0",
     "description": "The launcher to install and manage the Security Breach Multiplayer mod",
     "author": "SBMP Team",
     "main": "main.js",
@@ -48,15 +48,15 @@
     "dependencies": {
         "@continuata/unrar": "^1.6.0",
         "adm-zip": "^0.5.9",
-        "axios": "^0.25.0",
+        "axios": "^0.26.1",
         "electron-log": "^4.4.6",
         "electron-store": "^8.0.1",
         "progress-stream": "^2.0.0",
         "regedit": "^5.0.0",
-        "showdown": "^1.9.1"
+        "showdown": "^2.0.3"
     },
     "devDependencies": {
-        "electron": "^17.0.0",
-        "electron-builder": "^22.14.5"
+        "electron": "^18.0.3",
+        "electron-builder": "^22.14.13"
     }
 }

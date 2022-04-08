@@ -2,6 +2,8 @@ const path = require("path");
 const log = require("electron-log");
 const preload = require("./preload");
 const { Sleep } = require("./preload");
+const { default: axios } = require("axios");
+const { shell } = require("electron");
 var openPanel = null, golden = null, upSideDown = 0, upSideDownTimeOut = undefined, iCannotSee = 0, iCannotSeeTimeOut = undefined;
 
 console.log = log.log;
@@ -59,6 +61,11 @@ window.addEventListener("load", () => {
                 preload.ShowPopUp("changelogPopup", "New in " + preload.GetPackageData().version, (await preload.GetVersionChanges()));
                 preload.SetSetting("lastRunVersion", preload.GetPackageData().version);
             }
+            
+            preload.ShowPopUp("bannerPopup", "New Launcher", "./assets/newSL.png", async () => {
+                let dl = await axios.get("https://api.github.com/repos/D3W10/Swing-Launcher-Releases/releases/latest");
+                shell.openExternal(dl.data.assets[0].browser_download_url);
+            });
         }, 1000);
     }());
     
@@ -92,6 +99,13 @@ window.addEventListener("load", () => {
     //#region MAIN PANEL
 
     document.getElementById("mainIcon").addEventListener("dblclick", async () => document.getElementById("mainSecretAudio").play());
+
+    document.getElementById("mainOutdated").addEventListener("click", () => {
+        preload.ShowPopUp("bannerPopup", "New Launcher", "./assets/newSL.png", async () => {
+            let dl = await axios.get("https://api.github.com/repos/D3W10/Swing-Launcher-Releases/releases/latest");
+            shell.openExternal(dl.data.assets[0].browser_download_url);
+        });
+    });
 
     document.getElementById("mainButton").addEventListener("click", async () => {
         if (document.getElementById("mainButton").innerText == "Install" || document.getElementById("mainButton").innerText == "Update") {
